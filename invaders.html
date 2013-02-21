@@ -8,16 +8,59 @@
   <style type="text/css">
 
   .score {
+    float: left;
     font-size: 39;
     color: white;
-    position: absolute;
     font-family: helvetica;
     padding: 10px;
   }
+  .hi-score {
+    float: right;
+    padding: 10px;
+    font-size: 39;
+    color: white;
+    font-family: helvetica;
+    /*margin: 0px 0px 0px 250px;*/
+  }
+  .death-summary {
+    clear: both;
+    display: none;
+    color: white;
+    font-family: helvetica;
+    font-size: 210;
+    top: 200px;
+    padding: 10px;
+  }
+
+  .reset-button {
+    clear: both;
+    display: none;
+    font-size: 39;
+    color: white;
+    font-family: helvetica;
+    padding: 10px;
+/*    margin: 830px 0px 0px 630px;
+*/  }
+
+  #canvas-wrap {
+    position:relative;
+    width: 800px;
+  }
+  #overlay {
+    position:absolute; top:0px; left:0px;
+  }
+
 
   </style>
   <script src="invaders.js"></script>
-  <div class="score">SCORE</div>
-  <canvas id="invaders" width="800" height="900">
+  <div id="canvas-wrap">
+    <canvas id="invaders" width="800" height="900"></canvas>
+    <div id="overlay">
+      <div class="death-summary"></div>
+      <div class="score"></div>
+      <div class="hi-score"></div>
+      <div class="reset-button">RESET</div>
+    </div>
+  </div>
 </body>
 </body>

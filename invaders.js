@@ -8,6 +8,8 @@ var InvadersGame = (function() {
     that.enemies = [];
     that.score = 0;
     that.dead = false;
+    that.planets = []
+    that.hiscore = 0;
 
     that.makeStars = function(){
       _.times(Math.floor(Math.random()*1) + 10, function(){
@@ -18,6 +20,7 @@ var InvadersGame = (function() {
 
     that.update = function() {
       $('.score').html("SCORE " + that.score);
+      $('.hi-score').html("HI-SCORE " + that.hiscore);
 
       _.each(that.stars, function(star){
         star.update();
@@ -37,14 +40,23 @@ var InvadersGame = (function() {
         }
         that.checkMissileCollision(enemy);
 
-        if (enemy.killedHero(that)) {
+        if (enemy.killedHero(that.ship)) {
           that.dead = true;
         }
       });
 
-      if (Math.floor(Math.random()*60) == 0) {
+      _.each(that.planets, function(planet) {
+        planet.update();
+      })
+
+      if (Math.floor(Math.random()*30) == 0) {
         var enemy = new Enemy
         that.enemies.push(enemy)
+      }
+
+      if (Math.floor(Math.random()*1000) == 0) {
+        var planet = new Planet;
+        that.planets.push(planet)
       }
 
       that.ship.move();
@@ -55,7 +67,7 @@ var InvadersGame = (function() {
     that.checkMissileCollision = function(enemy){
       _.each(that.missiles, function(missile) {
         if (Math.sqrt(((enemy.x - missile.x) * (enemy.x - missile.x)) + ((enemy.y - missile.y)
-                     * (enemy.y - missile.y))) < 20) {
+                     * (enemy.y - missile.y))) < 25) {
           that.enemies = _.without(that.enemies, enemy);
           that.score += 100;
         }
@@ -66,6 +78,9 @@ var InvadersGame = (function() {
       ctx.clearRect(0, 0, 800, 900);
       ctx.fillStyle = "black";
       ctx.fillRect(0, 0, 800, 900);
+      _.each(that.planets, function(planet) {
+        planet.draw(ctx);
+      })
       _.each(that.stars, function(star) {
         star.draw(ctx);
       });
@@ -81,11 +96,11 @@ var InvadersGame = (function() {
     that.bindKeys = function() {
       key('left', function() {
         that.ship.direction = -1;
-        that.ship.velocity = 30;
+        that.ship.velocity = 15;
       });
       key('right', function() {
         that.ship.direction = 1;
-        that.ship.velocity = 30;
+        that.ship.velocity = 15;
       });
       key('space', function() {
         that.fireMissile();
@@ -98,31 +113,60 @@ var InvadersGame = (function() {
     }
 
     that.stop = function() {
+      $('.death-summary').show().html("YOU'RE REAL DEAD.");
+      $('.reset-button').show();
       clearInterval(intervalTimer);
     };
 
     that.start = function() {
+      $('.death-summary').hide();
+      $('.reset-button').hide();
       that.makeStars();
       that.bindKeys();
       intervalTimer = setInterval(function() {
-        if (that.dead == false) {
+        if (that.dead == true) {
+          that.stop();
+          if (that.score > that.hiscore) {
+            that.hiscore = that.score;
+          }
+        }
         that.update();
         that.draw();
-        }
       }, 1000/40);
     };
   };
 
-  function Invaders() {
 
-  };
+  function Planet(){
+    var that = this;
+    that.x = Math.floor(Math.random()*800);
+    that.y = -200
+    that.size = Math.floor(Math.random()*50) + 80;
+    that.velocity = 0.5;
+    that.color = "rgba(" + (Math.floor(Math.random() * 150) + 50) + "," +
+                       (Math.floor(Math.random() * 150) + 50) + "," +
+                       (Math.floor(Math.random() * 150) + 50) + ",0.9)"
+
+    that.draw = function(ctx) {
+      ctx.fillStyle = that.color;
+      ctx.beginPath();
+      ctx.arc(that.x, that.y, that.size, 0, 360, true);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    this.update = function(ctx) {
+      this.y += that.velocity
+    }
+  }
 
   function Star() {
     var that = this;
-    that.x = Math.floor(Math.random()*800);
+    that.x = Math.random()*800;
     that.y = -10
-    that.size = Math.floor(Math.random()*4);
+    that.size = Math.random()*4;
     that.velocity = that.size + 2;
+
 
     that.draw = function(ctx) {
       ctx.fillStyle = "gray";
@@ -140,13 +184,15 @@ var InvadersGame = (function() {
   function Ship() {
     var that = this;
     that.x = 300;
-    that.y = 800;
-    that.velocity = 30;
+    that.y = 850;
+    that.velocity = 15;
     that.direction = 0;
+    var image = new Image();
+    image.src = "heavyfreighter.png";
 
     that.decDirection = function() {
       if (that.velocity > 0) {
-        that.velocity -= 3
+        that.velocity -= 1.5
       }
     }
 
@@ -161,14 +207,8 @@ var InvadersGame = (function() {
     }
 
     that.draw = function(ctx) {
-      ctx.fillStyle = "purple";
-      ctx.beginPath();
-      ctx.moveTo(that.x + 10, that.y + 10); // give the (x,y) coordinates
-      ctx.lineTo(that.x + 30, that.y + 40);
-      ctx.lineTo(that.x - 30, that.y + 40);
-      ctx.lineTo(that.x + 10, that.y + 10);
-      ctx.closePath();
-      ctx.fill();
+      ctx.drawImage(image, that.x - 30, that.y - 30);
+
     }
   }
 
@@ -180,6 +220,8 @@ var InvadersGame = (function() {
     that.velocity = 30
 
     that.draw = function(ctx) {
+      ctx.fillStyle = "red";
+      ctx.fillRect(that.x, that.y, that.size, 20);
       ctx.fillStyle = "yellow";
       ctx.fillRect(that.x, that.y, that.size, 15);
     }
@@ -192,32 +234,34 @@ var InvadersGame = (function() {
   function Enemy(){
     var that = this;
     that.x = Math.floor(Math.random()*800);
-    that.y = -10
-    that.velocity = 3;
+    that.y = -40
+    that.velocity = Math.random()*5 + 1;
+    that.xVelocity = (Math.random()*-5) + (Math.random()*5 + 1);
     that.mobMissiles = [];
+    var image = new Image();
+    image.src = "bgspeedship.png";
 
     that.draw = function(ctx) {
-      ctx.fillStyle = "green";
-      ctx.fillRect(that.x, that.y, 40, 20);
-      ctx.fill();
+      ctx.drawImage(image, that.x - 30, that.y)
       _.each(that.mobMissiles, function(missile) {
          missile.draw(ctx);
       });
     };
 
     that.killedHero = function(hero) {
-      var killed = false
+      var killed = false;
       _.each(that.mobMissiles, function(missile) {
         if (Math.sqrt(((hero.x - missile.x) * (hero.x - missile.x)) + ((hero.y - missile.y)
-                     * (hero.y - missile.y))) < 20) {
-          killed = true
+                     * (hero.y - missile.y))) < 30) {
+          killed = true;
         }
       })
-      return killed
+      return killed;
     }
 
     that.update = function(ctx) {
       that.y += that.velocity
+      that.x += that.xVelocity
       if (Math.floor(Math.random()*20) == 0) {
         that.shoot();
       }
@@ -259,9 +303,15 @@ var InvadersGame = (function() {
 })();
 
 $(function draw() {
-  // $('body').append('');
   var canvas = document.getElementById('invaders');
   var ctx = canvas.getContext('2d');
   var game = new InvadersGame.Game(ctx);
+  $('.reset-button').click(function() {
+    var hiscore = game.hiscore;
+    game.stop();
+    game = new InvadersGame.Game(ctx);
+    game.hiscore = hiscore
+    game.start();
+  })
   game.start();
 })
