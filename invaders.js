@@ -1,101 +1,116 @@
 var InvadersGame = (function() {
 
-  function GameState(){
+  function GameState(gameStateData){
+    var that = this;
+    if (!gameStateData) {
+      that.stars = [];
+      that.players = [];
+      that.missiles = [];
+      that.enemies = [];
+      that.score = 0;
+      that.dead = false;
+      that.planets = [];
+      that.hiscore = 0;
+      that.starCounter = 0;
+    } else {
+      that.score = gameStateData.score;
+      that.enemies = _.map(gameStateData.enemies, function(enemyData) {
+        return new Enemy(enemyData);
+      });
+    }
 
   }
 
-  function Game(ctx) {
+  // function GameStateConst(gameStateData) {
+  //   _.each(gameStateData.planets, function(){
+
+  //   })
+  // }
+
+  function Game(ctx, gameState) {
     var that = this;
-    that.stars = [];
-    that.players = [];
-    that.missiles = [];
-    that.enemies = [];
-    that.score = 0;
-    that.dead = false;
-    that.planets = [];
-    that.hiscore = 0;
-    that.starCounter = 0;
+    that.gameState = gameState;
 
     that.makePlayers = function(){
-      that.playerOne = new Ship();
-      that.players.push(that.playerOne);
-      that.playerTwo = new Ship();
-      that.players.push(that.playerTwo);
+      that.gameState.playerOne = new Ship();
+      that.gameState.players.push(that.gameState.playerOne);
+      that.gameState.playerTwo = new Ship();
+      that.gameState.players.push(that.gameState.playerTwo);
     }
 
     that.makeStars = function(){
       _.times(Math.floor(Math.random()*1) + 10, function(){
         var star = new Star;
-        that.stars.push(star);
+        that.gameState.stars.push(star);
       })
     };
 
     that.update = function() {
       $('.score').html("SCORE " + that.score);
       $('.hi-score').html("HI-SCORE " + that.hiscore);
-      _.each(that.players, function(player) {
+      _.each(that.gameState.players, function(player) {
         player.move();
         player.decDirection();
       })
 
-      _.each(that.stars, function(star){
+      _.each(that.gameState.stars, function(star){
         star.update();
         if (star.y > 900) {
-          that.stars = _.without(that.stars, star);
+          that.gameState.stars = _.without(that.gameState.stars, star);
         }
       });
 
-      _.each(that.missiles, function(missile) {
+      _.each(that.gameState.missiles, function(missile) {
         missile.update();
       });
 
-      _.each(that.enemies, function(enemy) {
+      _.each(that.gameState.enemies, function(enemy) {
         enemy.update(ctx);
         if (enemy.y > 900) {
-          that.enemies = _.without(that.enemies, enemy);
+          that.gameState.enemies = _.without(that.gameState.enemies, enemy);
         }
         that.checkMissileCollision(enemy);
 
-        if (enemy.killedHero(that.playerOne)) {
-          that.playerOne.dead = true
-          that.players = _.without(that.players, that.playerOne);
+        if (enemy.killedHero(that.gameState.playerOne)) {
+          that.gameState.playerOne.dead = true
+          that.gameState.players = _.without(that.gameState.players, that.gameState.playerOne);
         }
-        if (enemy.killedHero(that.playerTwo)) {
-          that.playerTwo.dead = true
-          that.players = _.without(that.players, that.playerTwo);
+        if (enemy.killedHero(that.gameState.playerTwo)) {
+          that.gameState.playerTwo.dead = true
+          that.gameState.players = _.without(that.gameState.players, that.gameState.playerTwo);
         }
       });
 
-      _.each(that.planets, function(planet) {
+      _.each(that.gameState.planets, function(planet) {
         planet.update();
       })
 
       if (Math.floor(Math.random()*30) == 0) {
         var enemy = new Enemy
-        that.enemies.push(enemy)
+        that.gameState.enemies.push(enemy)
       }
 
       if (Math.floor(Math.random()*1000) == 0) {
         var planet = new Planet;
-        that.planets.push(planet)
+        that.gameState.planets.push(planet)
       }
 
       if (Math.floor(Math.random()*200) == 0) {
-        that.starCounter = (Math.random()*100);
+        that.gameState.starCounter = (Math.random()*100);
       }
-      if (that.starCounter <= 0) {
+      if (that.gameState.starCounter <= 0) {
         that.makeStars();
       }
 
-      that.starCounter --;
+      that.gameState.starCounter --;
     };
 
     that.checkMissileCollision = function(enemy){
-      _.each(that.missiles, function(missile) {
+      _.each(that.gameState.missiles, function(missile) {
         if (Math.sqrt(((enemy.x - missile.x) * (enemy.x - missile.x)) + ((enemy.y - missile.y)
                      * (enemy.y - missile.y))) < 25) {
-          that.enemies = _.without(that.enemies, enemy);
-          that.score += 100;
+          that.gameState.enemies = _.without(that.gameState.enemies, enemy);
+          that.gameState.score += 100;
         }
       })
     }
@@ -104,28 +119,28 @@ var InvadersGame = (function() {
       ctx.clearRect(0, 0, 800, 900);
       ctx.fillStyle = "black";
       ctx.fillRect(0, 0, 800, 900);
-      _.each(that.planets, function(planet) {
+      _.each(that.gameState.planets, function(planet) {
+        Planet.draw(ctx, planet);
         planet.draw(ctx);
       })
-      _.each(that.players, function(player) {
+      _.each(that.gameState.players, function(player) {
         player.draw(ctx);
       })
-      _.each(that.stars, function(star) {
+      _.each(that.gameState.stars, function(star) {
         star.draw(ctx);
       });
-      _.each(that.missiles, function(missile) {
+      _.each(that.gameState.missiles, function(missile) {
         missile.draw(ctx);
       });
-      _.each(that.enemies, function(enemy) {
+      _.each(that.gameState.enemies, function(enemy) {
         enemy.draw(ctx);
       });
     };
 
-
     that.fireMissile = function(player) {
       if (!player.dead) {
         var missile = new Missile(player);
-        that.missiles.push(missile);
+        that.gameState.missiles.push(missile);
       }
     }
 
@@ -135,7 +150,7 @@ var InvadersGame = (function() {
       clearInterval(intervalTimer);
     };
 
-    that.start = function() {
+    that.start = function(gameMasterSocket) {
       $('.death-summary').hide();
       $('.reset-button').hide();
       that.makeStars();
@@ -146,57 +161,57 @@ var InvadersGame = (function() {
 
       intervalTimer = setInterval(function() {
         if(key.isPressed('a')) {
-          that.playerOne.direction = -1;
-          that.playerOne.velocity = 15;
+          that.gameState.playerOne.direction = -1;
+          that.gameState.playerOne.velocity = 15;
         }
         if(key.isPressed('d')) {
-          that.playerOne.direction = 1;
-          that.playerOne.velocity = 15;
+          that.gameState.playerOne.direction = 1;
+          that.gameState.playerOne.velocity = 15;
         }
         if(key.isPressed('w')) {
-          that.playerOne.moveUp();
+          that.gameState.playerOne.moveUp();
         }
         if(key.isPressed('s')) {
-          that.playerOne.moveDown();
+          that.gameState.playerOne.moveDown();
         }
-
         if(key.isPressed('space')) {
           if (playerOneBulletCounter <= 0) {
-            that.fireMissile(that.playerOne);
+            that.fireMissile(that.gameState.playerOne);
             playerOneBulletCounter = 9;
           }
         }
         if(key.isPressed('left')) {
-          that.playerTwo.direction = -1;
-          that.playerTwo.velocity = 15;
+          that.gameState.playerTwo.direction = -1;
+          that.gameState.playerTwo.velocity = 15;
         }
         if(key.isPressed('right')) {
-          that.playerTwo.direction = 1;
-          that.playerTwo.velocity = 15;
+          that.gameState.playerTwo.direction = 1;
+          that.gameState.playerTwo.velocity = 15;
         }
         if(key.isPressed('return')) {
           if (playerTwoBulletCounter <= 0) {
-            that.fireMissile(that.playerTwo);
+            that.fireMissile(that.gameState.playerTwo);
             playerTwoBulletCounter = 9;
           }
         }
         if(key.isPressed('up')) {
-          that.playerTwo.moveUp();
+          that.gameState.playerTwo.moveUp();
         }
         if(key.isPressed('down')) {
-          that.playerTwo.moveDown();
+          that.gameState.playerTwo.moveDown();
         }
 
-        if (that.players.length == 0) {
+        if (that.gameState.players.length == 0) {
           that.stop();
-          if (that.score > that.hiscore) {
-            that.hiscore = that.score;
+          if (that.gameState.score > that.gameState.hiscore) {
+            that.gameState.hiscore = that.gameState.score;
           }
         }
         playerOneBulletCounter--;
         playerTwoBulletCounter--;
         that.update();
         that.draw();
+        gameMasterSocket.send(JSON.stringify(gameState));
       }, 1000/40);
     };
   };
@@ -227,6 +242,10 @@ var InvadersGame = (function() {
     this.update = function(ctx) {
       this.y += that.velocity
     }
+  }
+
+  var Planet.draw(ctx, planet) {
+
   }
 
   function Star() {
@@ -401,21 +420,23 @@ var InvadersGame = (function() {
   }
 
   return {
-    Game: Game
+    Game: Game,
+    GameState: GameState
   };
 
 })();
 
-$(function draw() {
-  var canvas = document.getElementById('invaders');
-  var ctx = canvas.getContext('2d');
-  var game = new InvadersGame.Game(ctx);
-  $('.reset-button').click(function() {
-    var hiscore = game.hiscore;
-    game.stop();
-    game = new InvadersGame.Game(ctx);
-    game.hiscore = hiscore
-    game.start();
-  })
-  game.start();
-})
+// $(function draw() {
+//   var canvas = document.getElementById('invaders');
+//   var ctx = canvas.getContext('2d');
+//   var gameState = new InvadersGame.GameState();
+//   var game = new InvadersGame.Game(ctx, gameState);
+//   $('.reset-button').click(function() {
+//     var hiscore = game.hiscore;
+//     game.stop();
+//     game = new InvadersGame.Game(ctx);
+//     game.hiscore = hiscore
+//     game.start();
+//   })
+//   game.start();
+// })
