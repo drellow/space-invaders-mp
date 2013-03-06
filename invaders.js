@@ -1,15 +1,27 @@
 var InvadersGame = (function() {
 
+  function GameState(){
+
+  }
+
   function Game(ctx) {
     var that = this;
     that.stars = [];
-    that.ship = new Ship();
+    that.players = [];
     that.missiles = [];
     that.enemies = [];
     that.score = 0;
     that.dead = false;
-    that.planets = []
+    that.planets = [];
     that.hiscore = 0;
+    that.starCounter = 0;
+
+    that.makePlayers = function(){
+      that.playerOne = new Ship();
+      that.players.push(that.playerOne);
+      that.playerTwo = new Ship();
+      that.players.push(that.playerTwo);
+    }
 
     that.makeStars = function(){
       _.times(Math.floor(Math.random()*1) + 10, function(){
@@ -21,6 +33,10 @@ var InvadersGame = (function() {
     that.update = function() {
       $('.score').html("SCORE " + that.score);
       $('.hi-score').html("HI-SCORE " + that.hiscore);
+      _.each(that.players, function(player) {
+        player.move();
+        player.decDirection();
+      })
 
       _.each(that.stars, function(star){
         star.update();
@@ -40,8 +56,13 @@ var InvadersGame = (function() {
         }
         that.checkMissileCollision(enemy);
 
-        if (enemy.killedHero(that.ship)) {
-          that.dead = true;
+        if (enemy.killedHero(that.playerOne)) {
+          that.playerOne.dead = true
+          that.players = _.without(that.players, that.playerOne);
+        }
+        if (enemy.killedHero(that.playerTwo)) {
+          that.playerTwo.dead = true
+          that.players = _.without(that.players, that.playerTwo);
         }
       });
 
@@ -59,9 +80,14 @@ var InvadersGame = (function() {
         that.planets.push(planet)
       }
 
-      that.ship.move();
-      that.makeStars();
-      that.ship.decDirection();
+      if (Math.floor(Math.random()*200) == 0) {
+        that.starCounter = (Math.random()*100);
+      }
+      if (that.starCounter <= 0) {
+        that.makeStars();
+      }
+
+      that.starCounter --;
     };
 
     that.checkMissileCollision = function(enemy){
@@ -81,6 +107,9 @@ var InvadersGame = (function() {
       _.each(that.planets, function(planet) {
         planet.draw(ctx);
       })
+      _.each(that.players, function(player) {
+        player.draw(ctx);
+      })
       _.each(that.stars, function(star) {
         star.draw(ctx);
       });
@@ -90,26 +119,14 @@ var InvadersGame = (function() {
       _.each(that.enemies, function(enemy) {
         enemy.draw(ctx);
       });
-      that.ship.draw(ctx);
     };
 
-    that.bindKeys = function() {
-      key('left', function() {
-        that.ship.direction = -1;
-        that.ship.velocity = 15;
-      });
-      key('right', function() {
-        that.ship.direction = 1;
-        that.ship.velocity = 15;
-      });
-      key('space', function() {
-        that.fireMissile();
-      })
-    };
 
-    that.fireMissile = function() {
-      var missile = new Missile(that.ship);
-      that.missiles.push(missile);
+    that.fireMissile = function(player) {
+      if (!player.dead) {
+        var missile = new Missile(player);
+        that.missiles.push(missile);
+      }
     }
 
     that.stop = function() {
@@ -122,14 +139,62 @@ var InvadersGame = (function() {
       $('.death-summary').hide();
       $('.reset-button').hide();
       that.makeStars();
-      that.bindKeys();
+      that.makePlayers();
+
+      var playerOneBulletCounter = 9;
+      var playerTwoBulletCounter = 9;
+
       intervalTimer = setInterval(function() {
-        if (that.dead == true) {
+        if(key.isPressed('a')) {
+          that.playerOne.direction = -1;
+          that.playerOne.velocity = 15;
+        }
+        if(key.isPressed('d')) {
+          that.playerOne.direction = 1;
+          that.playerOne.velocity = 15;
+        }
+        if(key.isPressed('w')) {
+          that.playerOne.moveUp();
+        }
+        if(key.isPressed('s')) {
+          that.playerOne.moveDown();
+        }
+
+        if(key.isPressed('space')) {
+          if (playerOneBulletCounter <= 0) {
+            that.fireMissile(that.playerOne);
+            playerOneBulletCounter = 9;
+          }
+        }
+        if(key.isPressed('left')) {
+          that.playerTwo.direction = -1;
+          that.playerTwo.velocity = 15;
+        }
+        if(key.isPressed('right')) {
+          that.playerTwo.direction = 1;
+          that.playerTwo.velocity = 15;
+        }
+        if(key.isPressed('return')) {
+          if (playerTwoBulletCounter <= 0) {
+            that.fireMissile(that.playerTwo);
+            playerTwoBulletCounter = 9;
+          }
+        }
+        if(key.isPressed('up')) {
+          that.playerTwo.moveUp();
+        }
+        if(key.isPressed('down')) {
+          that.playerTwo.moveDown();
+        }
+
+        if (that.players.length == 0) {
           that.stop();
           if (that.score > that.hiscore) {
             that.hiscore = that.score;
           }
         }
+        playerOneBulletCounter--;
+        playerTwoBulletCounter--;
         that.update();
         that.draw();
       }, 1000/40);
@@ -145,11 +210,15 @@ var InvadersGame = (function() {
     that.velocity = 0.5;
     that.color = "rgba(" + (Math.floor(Math.random() * 150) + 50) + "," +
                        (Math.floor(Math.random() * 150) + 50) + "," +
-                       (Math.floor(Math.random() * 150) + 50) + ",0.9)"
+                       (Math.floor(Math.random() * 150) + 50) + ",0.4)"
+
 
     that.draw = function(ctx) {
-      ctx.fillStyle = that.color;
       ctx.beginPath();
+      var linearGradient1 = ctx.createLinearGradient(that.x, that.y, that.x+that.size ,that.y+that.size);
+      linearGradient1.addColorStop(0, that.color);
+      linearGradient1.addColorStop(1, 'rgb(  0, 0, 0)');
+      ctx.fillStyle = linearGradient1;
       ctx.arc(that.x, that.y, that.size, 0, 360, true);
       ctx.closePath();
       ctx.fill();
@@ -166,10 +235,12 @@ var InvadersGame = (function() {
     that.y = -10
     that.size = Math.random()*4;
     that.velocity = that.size + 2;
+    that.colorCode = Math.floor(Math.random() * 150) + (Math.floor(that.size) * 5);
+    that.color = "rgb(" + that.colorCode + "," +  that.colorCode + "," + that.colorCode + ")"
 
 
     that.draw = function(ctx) {
-      ctx.fillStyle = "gray";
+      ctx.fillStyle = that.color;
       ctx.beginPath();
       ctx.arc(that.x, that.y, that.size, 0, 360, true);
       ctx.closePath();
@@ -183,20 +254,32 @@ var InvadersGame = (function() {
 
   function Ship() {
     var that = this;
+    that.position = "maxDown"
     that.x = 300;
     that.y = 850;
     that.velocity = 15;
+    that.verticalVelocity = 15;
     that.direction = 0;
+    that.dead = false;
     var image = new Image();
     image.src = "heavyfreighter.png";
 
     that.decDirection = function() {
       if (that.velocity > 0) {
-        that.velocity -= 1.5
+        that.velocity -= 1.5;
+      }
+      if (that.verticalVelocity > 0) {
+        that.verticalVelocity -= 1.5;
       }
     }
 
     that.move = function() {
+      if (that.y <= 800) {
+        that.position = "maxUp";
+      } else if (that.y >= 850) {
+        that.position = "maxDown";
+      }
+
       if (that.x > 850) {
         that.x = 50
       }
@@ -206,9 +289,23 @@ var InvadersGame = (function() {
       that.x += that.velocity * that.direction;
     }
 
+    that.moveUp = function() {
+      if (!(that.position == "maxUp")) {
+        that.verticalVelocity = 15;
+        that.y += that.verticalVelocity * -1;
+      }
+    }
+
+    that.moveDown = function() {
+      if (!(that.position == "maxDown")) {
+        that.verticalVelocity = 15;
+        that.y += that.verticalVelocity * 1;
+      }
+    }
+
+
     that.draw = function(ctx) {
       ctx.drawImage(image, that.x - 30, that.y - 30);
-
     }
   }
 
@@ -238,6 +335,7 @@ var InvadersGame = (function() {
     that.velocity = Math.random()*5 + 1;
     that.xVelocity = (Math.random()*-5) + (Math.random()*5 + 1);
     that.mobMissiles = [];
+    that.missileOffset = Math.floor(Math.random()*2) + 1
     var image = new Image();
     image.src = "bgspeedship.png";
 
@@ -275,8 +373,12 @@ var InvadersGame = (function() {
     }
 
     that.shoot = function() {
-      var mobMissile = new MobMissile(that);
-      that.mobMissiles.push(mobMissile);
+      var mobMissileA = new MobMissile(that);
+      mobMissileA.offset = that.missileOffset
+      var mobMissileB = new MobMissile(that);
+      mobMissileB.offset = that.missileOffset * -1
+      that.mobMissiles.push(mobMissileA);
+      that.mobMissiles.push(mobMissileB);
     }
   }
 
@@ -284,7 +386,8 @@ var InvadersGame = (function() {
     var that = this;
     that.x = enemy.x;
     that.y = enemy.y;
-    that.velocity = -30;
+    that.offset = 0
+    that.velocity = -15;
 
     that.draw = function(ctx) {
       ctx.fillStyle = "yellow";
@@ -293,6 +396,7 @@ var InvadersGame = (function() {
 
     that.update = function() {
       that.y -= that.velocity
+      that.x += that.offset
     }
   }
 
