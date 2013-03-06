@@ -9,13 +9,27 @@
   };
 
   gameSlaveSocket.onmessage = function(event) {
-    // console.log(event.data);
-    // console.log(JSON.parse(event.data));
     var gameStateData = JSON.parse(event.data);
-    var gameState = new InvadersGame.GameStateConstr(gameStateData);
-    console.log(gameState.stars);
+    var gameState = new InvadersGame.GameState(gameStateData);
     var game = new InvadersGame.Game(ctx, gameState);
     game.draw();
   };
+
+
+  key('left', function () {
+    gameSlaveSocket.send('left');
+  });
+  key('right', function () {
+    gameSlaveSocket.send('right');
+  });
+  key('up', function () {
+    gameSlaveSocket.send('up');
+  });
+  key('down', function () {
+    gameSlaveSocket.send('down');
+  });
+  key('space', function () {
+    gameSlaveSocket.send('space');
+  });
 
 })();

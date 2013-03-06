@@ -18,8 +18,8 @@
   }
 
   // Master must receive keystrokes, eventually!
-  gameMasterSocket.onmessage = function (event) {
-    console.log(event.data);
+  gameMasterSocket.onmessage = function(input) {
+    game.p2Input.push(input.data);
   };
 
   game.start(gameMasterSocket);
