@@ -8,7 +8,7 @@ EM.run do
       ALL_CLIENTS << ws
     end
 
-    # ws.onclose { ALL_CLIENTS.delete(ws) }
+    ws.onclose { ALL_CLIENTS.delete(ws) }
 
     ws.onmessage do |msg|
       ALL_CLIENTS.each { |socket| socket.send msg unless (socket == ws) }

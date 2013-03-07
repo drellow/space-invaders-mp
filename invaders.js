@@ -13,7 +13,6 @@ var InvadersGame = (function() {
       // that.planets = [];
       that.hiscore = 0;
       that.p2Input = [];
-      that.gameBG = new GameBG();
     } else {
       that.players = _.map(gameStateData.players, function(playerData) {
         return new Ship(playerData);
@@ -48,7 +47,7 @@ var InvadersGame = (function() {
     that.starCounter = 0;
 
     that.makeStars = function(){
-      _.times(Math.floor(Math.random()*1) + 1, function(){
+      _.times(Math.floor(Math.random()*1) + 10, function(){
         var star = new Star;
         that.stars.push(star);
       })
@@ -93,11 +92,9 @@ var InvadersGame = (function() {
       that.gameState.players.push(that.gameState.playerTwo);
     }
 
-
-
     that.update = function() {
-      // $('.score').html("SCORE " + that.score);
-      // $('.hi-score').html("HI-SCORE " + that.hiscore);
+      $('.score').html("SCORE " + that.gameState.score);
+      $('.hi-score').html("HI-SCORE " + that.gameState.hiscore);
       _.each(that.gameState.players, function(player) {
         player.move();
         player.decDirection();
@@ -128,7 +125,7 @@ var InvadersGame = (function() {
       //   planet.update();
       // })
 
-      if (Math.floor(Math.random()*80) == 0) {
+      if (Math.floor(Math.random()*60) == 0) {
         var enemy = new Enemy
         that.gameState.enemies.push(enemy)
       }
@@ -150,8 +147,8 @@ var InvadersGame = (function() {
     }
 
     that.draw = function(){
-      $('.score').html("SCORE " + that.score);
-      $('.hi-score').html("HI-SCORE " + that.hiscore);
+      $('.score').html("SCORE " + that.gameState.score);
+      $('.hi-score').html("HI-SCORE " + that.gameState.hiscore);
       // _.each(that.gameState.planets, function(planet) {
       //   Planet.draw(ctx, planet);
       //   planet.draw(ctx);
@@ -187,6 +184,7 @@ var InvadersGame = (function() {
       $('.reset-button').hide();
       // that.makeStars();
       that.makePlayers();
+      var gameBG = new GameBG;
 
       var playerOneBulletCounter = 9;
       var playerTwoBulletCounter = 9;
@@ -244,8 +242,8 @@ var InvadersGame = (function() {
         playerOneBulletCounter--;
         playerTwoBulletCounter--;
         that.update();
-        that.gameState.gameBG.update();
-        that.gameState.gameBG.draw(ctx);
+        gameBG.update();
+        gameBG.draw(ctx);
         that.draw();
         gameMasterSocket.send(JSON.stringify(gameState));
         that.p2Input = [];
@@ -307,9 +305,9 @@ var InvadersGame = (function() {
   function Ship(shipData) {
     var that = this;
     if (!shipData) {
-      that.position = "maxDown";
+      that.position = "space";
       that.x = 300;
-      that.y = 850;
+      that.y = 840;
       that.velocity = 15;
       that.verticalVelocity = 15;
       that.direction = 0;
@@ -336,10 +334,12 @@ var InvadersGame = (function() {
     }
 
     that.move = function() {
-      if (that.y <= 800) {
+      if (that.y <= 200) {
         that.position = "maxUp";
       } else if (that.y >= 850) {
         that.position = "maxDown";
+      } else {
+        that.position = "space";
       }
 
       if (that.x > 850) {
@@ -349,6 +349,8 @@ var InvadersGame = (function() {
         that.x = 810
       }
       that.x += that.velocity * that.direction;
+      // round number to reduce complexity
+      that.x = Math.round(that.x*10)/10
     }
 
     that.moveUp = function() {
@@ -402,10 +404,12 @@ var InvadersGame = (function() {
     if (!enemyData) {
       that.x = Math.floor(Math.random()*800);
       that.y = -40
-      that.velocity = Math.random()*5 + 1;
-      that.xVelocity = (Math.random()*-5) + (Math.random()*5 + 1);
-      that.missileOffset = Math.floor(Math.random()*2) + 1
-      that.mobMissiles = []
+      that.velocity = Math.round(Math.random()*5 + 1);
+      that.xVelocity = Math.round((Math.random()*-5) + (Math.random()*5 + 1));
+      that.missileOffset = Math.floor(Math.random()*2) + 1;
+      that.mobMissiles = [];
+      that.shootPattern = Math.floor(Math.random()*11)*10
+      that.bulletCounter = that.shootPattern;
     } else {
       that.x = enemyData.x;
       that.y = enemyData.y;
@@ -415,6 +419,8 @@ var InvadersGame = (function() {
       that.mobMissiles = _.map(enemyData.mobMissiles, function(missileData) {
         return new MobMissile(missileData)
       });
+      that.shootPattern = enemyData.shootPattern;
+      that.bulletCounter = enemyData.bulletCounter;
     }
     var image = new Image();
     image.src = "bgspeedship.png";
@@ -438,9 +444,13 @@ var InvadersGame = (function() {
     }
 
     that.update = function(ctx) {
-      that.y += that.velocity
+      that.y += that.velocity;
+      that.y = Math.round(that.y);
       that.x += that.xVelocity
-      if (Math.floor(Math.random()*20) == 0) {
+      that.x = Math.round(that.x);
+      if (that.bulletCounter < -50) {
+        that.bulletCounter = that.shootPattern;
+      } else if (that.bulletCounter > 0 && that.bulletCounter % 10 == 0) {
         that.shoot();
       }
       _.each(that.mobMissiles, function(missile) {
@@ -449,6 +459,7 @@ var InvadersGame = (function() {
         }
         missile.update();
       })
+      that.bulletCounter--;
     }
 
     that.shoot = function() {
@@ -481,8 +492,10 @@ var InvadersGame = (function() {
     };
 
     that.update = function() {
-      that.y -= that.velocity
-      that.x += that.offset
+      that.y -= that.velocity;
+      that.x += that.offset;
+      that.y = Math.round(that.y);
+      that.x = Math.round(that.x);
     }
   }
 
