@@ -13,7 +13,7 @@ var InvadersGame = (function() {
       // that.planets = [];
       that.hiscore = 0;
       that.p2Input = [];
-      // that.starCounter = 0;
+      that.gameBG = new GameBG();
     } else {
       that.players = _.map(gameStateData.players, function(playerData) {
         return new Ship(playerData);
@@ -30,17 +30,57 @@ var InvadersGame = (function() {
       that.score = gameStateData.score;
       that.dead = gameStateData.dead;
       that.hiscore = gameStateData.hiscore;
-      // that.starCounter = gameStateData.starCounter;
-
     }
 
   }
 
-  // function GameStateConst(gameStateData) {
-  //   _.each(gameStateData.planets, function(){
+  function Black(ctx) {
+    this.draw = function() {
+      ctx.clearRect(0, 0, 800, 900);
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, 800, 900);
+    }
+  }
 
-  //   })
-  // }
+  function GameBG(ctx) {
+    var that = this;
+    that.stars = [];
+    that.starCounter = 0;
+
+    that.makeStars = function(){
+      _.times(Math.floor(Math.random()*1) + 1, function(){
+        var star = new Star;
+        that.stars.push(star);
+      })
+    };
+
+    that.update = function(){
+      _.each(that.stars, function(star){
+        star.update();
+        if (star.y > 900) {
+          that.stars = _.without(that.stars, star);
+        }
+      });
+
+      if (Math.floor(Math.random()*200) == 0) {
+        that.starCounter = (Math.random()*100);
+      }
+      if (that.starCounter <= 0) {
+        that.makeStars();
+      }
+
+      that.starCounter --;
+    };
+
+    that.draw = function(ctx) {
+      ctx.clearRect(0, 0, 800, 900);
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, 800, 900);
+      _.each(that.stars, function(star) {
+        star.draw(ctx);
+      });
+    }
+  }
 
   function Game(ctx, gameState) {
     var that = this;
@@ -53,12 +93,7 @@ var InvadersGame = (function() {
       that.gameState.players.push(that.gameState.playerTwo);
     }
 
-    // that.makeStars = function(){
-    //   _.times(Math.floor(Math.random()*1) + 10, function(){
-    //     var star = new Star;
-    //     that.gameState.stars.push(star);
-    //   })
-    // };
+
 
     that.update = function() {
       // $('.score').html("SCORE " + that.score);
@@ -67,13 +102,6 @@ var InvadersGame = (function() {
         player.move();
         player.decDirection();
       })
-
-      // _.each(that.gameState.stars, function(star){
-      //   star.update();
-      //   if (star.y > 900) {
-      //     that.gameState.stars = _.without(that.gameState.stars, star);
-      //   }
-      // });
 
       _.each(that.gameState.missiles, function(missile) {
         missile.update();
@@ -100,7 +128,7 @@ var InvadersGame = (function() {
       //   planet.update();
       // })
 
-      if (Math.floor(Math.random()*30) == 0) {
+      if (Math.floor(Math.random()*80) == 0) {
         var enemy = new Enemy
         that.gameState.enemies.push(enemy)
       }
@@ -109,15 +137,6 @@ var InvadersGame = (function() {
       //   var planet = new Planet;
       //   that.gameState.planets.push(planet)
       // }
-
-      // if (Math.floor(Math.random()*200) == 0) {
-      //   that.gameState.starCounter = (Math.random()*100);
-      // }
-      // if (that.gameState.starCounter <= 0) {
-      //   that.makeStars();
-      // }
-
-      // that.gameState.starCounter --;
     };
 
     that.checkMissileCollision = function(enemy){
@@ -131,9 +150,6 @@ var InvadersGame = (function() {
     }
 
     that.draw = function(){
-      ctx.clearRect(0, 0, 800, 900);
-      ctx.fillStyle = "black";
-      ctx.fillRect(0, 0, 800, 900);
       $('.score').html("SCORE " + that.score);
       $('.hi-score').html("HI-SCORE " + that.hiscore);
       // _.each(that.gameState.planets, function(planet) {
@@ -143,9 +159,7 @@ var InvadersGame = (function() {
       _.each(that.gameState.players, function(player) {
         player.draw(ctx);
       })
-      // _.each(that.gameState.stars, function(star) {
-      //   star.draw(ctx);
-      // });
+
       _.each(that.gameState.missiles, function(missile) {
         missile.draw(ctx);
       });
@@ -230,6 +244,8 @@ var InvadersGame = (function() {
         playerOneBulletCounter--;
         playerTwoBulletCounter--;
         that.update();
+        that.gameState.gameBG.update();
+        that.gameState.gameBG.draw(ctx);
         that.draw();
         gameMasterSocket.send(JSON.stringify(gameState));
         that.p2Input = [];
@@ -451,7 +467,7 @@ var InvadersGame = (function() {
       that.x = enemy.x;
       that.y = enemy.y;
       that.offset = 0
-      that.velocity = -15;
+      that.velocity = -8;
     } else {
       that.x = missileData.x;
       that.y = missileData.y;
@@ -472,7 +488,9 @@ var InvadersGame = (function() {
 
   return {
     Game: Game,
-    GameState: GameState
+    GameState: GameState,
+    GameBG: GameBG,
+    Black: Black
   };
 
 })();

@@ -2,6 +2,10 @@
   var gameSlaveSocket = new WebSocket("ws://localhost:8080");
   var canvas = document.getElementById('invaders');
   var ctx = canvas.getContext('2d');
+  var gameBG = new InvadersGame.Black(ctx);
+  var updateBG = function() {
+    gameBG.draw(ctx);
+  }
 
   gameSlaveSocket.onopen = function(event) {
     console.log("Slave opened socket");
@@ -12,6 +16,7 @@
     var gameStateData = JSON.parse(event.data);
     var gameState = new InvadersGame.GameState(gameStateData);
     var game = new InvadersGame.Game(ctx, gameState);
+    updateBG();
     game.draw();
   };
 
