@@ -14,7 +14,6 @@
 
   gameSlaveSocket.onmessage = function(event) {
     var gameStateData = JSON.parse(event.data);
-    console.log(gameStateData);
     var gameState = new InvadersGame.GameState(gameStateData);
     var game = new InvadersGame.Game(ctx, gameState);
     updateBG();

@@ -246,8 +246,9 @@ var InvadersGame = (function() {
         gameBG.draw(ctx);
         that.draw();
         gameMasterSocket.send(JSON.stringify(gameState));
+
         that.p2Input = [];
-      }, 1000/40);
+      }, 1000/20);
     };
   };
 
@@ -397,6 +398,14 @@ var InvadersGame = (function() {
     that.update = function(ctx) {
       that.y -= that.velocity
     }
+
+    that.toJSON = function() {
+      return {
+        x: that.x,
+        y: that.y,
+        size: that.size
+      };
+    }
   }
 
   function Enemy(enemyData){
@@ -496,6 +505,13 @@ var InvadersGame = (function() {
       that.x += that.offset;
       that.y = Math.round(that.y);
       that.x = Math.round(that.x);
+    }
+
+    that.toJSON = function() {
+      return {
+        x: that.x,
+        y: that.y
+      };
     }
   }
 
